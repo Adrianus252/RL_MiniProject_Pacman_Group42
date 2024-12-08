@@ -7,7 +7,7 @@ import time
 CELL_SIZE = 50
 GRID_SIZE = 8  # Set the grid size here
 BACKGROUND_COLOR = (0, 0, 0)  # Black
-SPEED = 0.2  # Adjust this value to control the speed (e.g., 0.2 seconds between frames)
+SPEED = 0.1  # Adjust this value to control the speed (e.g., 0.2 seconds between frames)
 
 # File paths for the sprites
 SPRITE_PATHS = {
@@ -150,8 +150,6 @@ def visualize_game_states(game_states, grid_size, sprite_paths):
             print(f"    Small Reward Positions: {small_reward_positions}")
             print(f"    Medium Reward Positions: {medium_reward_positions}")
 
-
-
             # Highlight the last step of the last episode
             if is_last_episode and is_last_step:
                 print("    Last Episode and Last Step!")
@@ -160,7 +158,7 @@ def visualize_game_states(game_states, grid_size, sprite_paths):
             time.sleep(SPEED)  # Use the SPEED variable to control delay
             clock.tick(60)
 
-            #Handle Pygame events (e.g., quitting)
+            # Handle Pygame events (e.g., quitting)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -169,6 +167,10 @@ def visualize_game_states(game_states, grid_size, sprite_paths):
             # Determine the winner after the last state of the episode
             if is_last_step:
                 if pacman_pos == big_reward_pos:
+                    winner = "pacman"
+                elif len(medium_reward_positions) == 0:  # All medium rewards collected
+                    winner = "pacman"
+                elif len(small_reward_positions) == 0:  # All small rewards collected
                     winner = "pacman"
                 elif pacman_pos in ghost_positions:
                     winner = "ghost"

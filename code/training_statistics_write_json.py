@@ -33,7 +33,14 @@ EPSILON = 1.0  # Exploration rate
 EPSILON_DECAY = 0.995  # Exploration decay
 MIN_EPSILON = 0.01
 
-EPISODES_COUNT = 50
+EPISODES_COUNT = 20
+
+
+RANDOM_PACMAN_START = False  # Set to True for random position every episode, False for a fixed start
+
+# Initialize Pac-Man's fixed start position if RANDOM_PACMAN_START is False
+fixed_start_position = None
+
 
 # Helper functions
 def create_environment():
@@ -223,16 +230,41 @@ for episode in range(EPISODES_COUNT):
     initial_small_rewards = len(small_rewards)
     initial_medium_rewards = len(medium_rewards)
 
-    position = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
-    while (
-        position in walls or 
-        position == big_reward or 
-        position in ghosts or 
-        position in small_rewards or 
-        position in medium_rewards
-    ):
-    #while position in walls or position == big_reward or position in ghosts:
+
+    # Generate Pac-Man's position
+    if RANDOM_PACMAN_START:
         position = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
+        while (
+            position in walls or 
+            position == big_reward or 
+            position in ghosts or 
+            position in small_rewards or 
+            position in medium_rewards
+        ):
+            position = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
+    else:
+        if episode == 0 or fixed_start_position is None:
+            fixed_start_position = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
+            while (
+                fixed_start_position in walls or 
+                fixed_start_position == big_reward or 
+                fixed_start_position in ghosts or 
+                fixed_start_position in small_rewards or 
+                fixed_start_position in medium_rewards
+            ):
+                fixed_start_position = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
+        position = fixed_start_position
+
+    # position = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
+    # while (
+    #     position in walls or 
+    #     position == big_reward or 
+    #     position in ghosts or 
+    #     position in small_rewards or 
+    #     position in medium_rewards
+    # ):
+    # #while position in walls or position == big_reward or position in ghosts:
+    #     position = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
 
     print(f"\n--- Episode {episode + 1} ---")
 
@@ -242,6 +274,32 @@ for episode in range(EPISODES_COUNT):
     step = 0
 
     game_states = []  # Store game states for this episode
+
+    # Save the initial game state (Step 0)
+    initial_state = {
+        "step": 0,  # Step 0 indicates the initial state before any moves
+        "pacman_position": position,
+        "ghost_positions": ghosts,
+        "walls": walls,
+        "big_reward": big_reward,
+        "medium_rewards": deepcopy(medium_rewards),
+        "small_rewards": deepcopy(small_rewards),
+        "grid": env.tolist(),
+        "pacman_cumulative_reward": 0,
+        "ghost_cumulative_reward": 0,
+    }
+    game_states.append(initial_state)  # Add the initial state to the game states
+
+    # Print inital step 0
+    # print(f"\n Initial Episode State {episode}, Step {step}:")
+    # print(f"Pac-Man Wins: {pacman_wins}")
+    # print(f"Ghost Wins: {ghost_wins}")
+    # print(f"  Pac-Man Position: {position}")
+    # print(f"  Ghost Positions: {ghosts}")
+    # print(f"  Small Reward Positions: {small_rewards}")
+    # print(f"  Medium Reward Positions: {medium_rewards}")
+    # print(f"  Big Reward Position: {big_reward}")
+
 
     while not done:
         step += 1
@@ -340,7 +398,8 @@ for episode in range(EPISODES_COUNT):
         # Print game state for each step
         #print(f"\nEpisode {episode + 1}, Step {step}:")
         # if step == 1:
-        print(f"\nEpisode {episode + 1}, Step {step}:")
+        #if not medium_rewards:
+        print(f"\n Episode {episode + 1}, Step {step}:")
         print(f"Pac-Man Wins: {pacman_wins}")
         print(f"Ghost Wins: {ghost_wins}")
         print(f"  Pac-Man Position: {position}")
@@ -357,8 +416,8 @@ for episode in range(EPISODES_COUNT):
             "ghost_positions": ghosts,
             "walls": walls,
             "big_reward": big_reward,
-            "medium_rewards": current_medium_rewards,
-            "small_rewards": current_small_rewards,
+            "medium_rewards": deepcopy(medium_rewards),
+            "small_rewards": deepcopy(small_rewards),
             "grid": env.tolist(),
             "pacman_cumulative_reward": pacman_cumulative_reward,
             "ghost_cumulative_reward": ghost_cumulative_reward,
@@ -367,18 +426,18 @@ for episode in range(EPISODES_COUNT):
 
 
     # new 
-    print(f"Loop exited on Episode {episode + 1}, Step {step}. Done = {done}")
-    if not done:
-        print(f"Loop ended unexpectedly in Episode {episode + 1}, Step {step} with done=False.")
-        print("Game state at termination:")
-        print(f"  Pac-Man Position: {position}")
-        print(f"  Ghost Positions: {ghosts}")
-        print(f"  Small Reward Positions: {small_rewards}")
-        print(f"  Medium Reward Positions: {medium_rewards}")
-        print(f"  Big Reward Position: {big_reward}")
-        print(f"  Pac-Man Cumulative Reward: {pacman_cumulative_reward}")
-        print(f"  Ghost Cumulative Reward: {ghost_cumulative_reward}")
-        print(f"  Walls: {walls}")
+    # print(f"Loop exited on Episode {episode + 1}, Step {step}. Done = {done}")
+    #if not done:
+        # print(f"Loop ended unexpectedly in Episode {episode + 1}, Step {step} with done=False.")
+        # print("Game state at termination:")
+    # print(f"  Pac-Man Position: {position}")
+    # print(f"  Ghost Positions: {ghosts}")
+    # print(f"  Small Reward Positions: {small_rewards}")
+    # print(f"  Medium Reward Positions: {medium_rewards}")
+    # print(f"  Big Reward Position: {big_reward}")
+    # print(f"  Pac-Man Cumulative Reward: {pacman_cumulative_reward}")
+    # print(f"  Ghost Cumulative Reward: {ghost_cumulative_reward}")
+    # print(f"  Walls: {walls}")
 
     # Save game states to a file
     save_game_state(f"game_states/game_states_episode_{episode + 1}.json", game_states)
