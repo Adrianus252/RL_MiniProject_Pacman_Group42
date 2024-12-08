@@ -10,14 +10,7 @@ This project simulates a Pac-Man game using Q-Learning and visualizes the result
 ## Requirements
 
 - Python 3.7+
-- Abhängigkeiten: 
-  - `pygame`
-  - `numpy`
-  - `matplotlib`
-  - `ipython`
-  - `plotly`
-  - `seaborn`
-  - `json`
+  - https://www.python.org/downloads/ 
 
 ---
 
@@ -27,10 +20,21 @@ This project simulates a Pac-Man game using Q-Learning and visualizes the result
    ```bash
    git https://github.com/Adrianus252/RL_MiniProject_Pacman_Group42.git
    cd RL_MiniProject_Pacman_Group42
----
+   ```
+
+2. **Libraries Installation with Pip**:
+    ```bash
+      pip install ipython
+      pip install plotly
+      pip install pygame
+      pip install numpy
+      pip install matplotlib
+      pip install seaborn
+    ```
+
 ## Usage
 
-### Training the Agents**
+### Training the Agents
 1. Run the training script:
    ```bash
    python training_statistics_write_json.py
@@ -53,8 +57,6 @@ RL_MiniProject_Pacman_Group42/
 ├─ code 
 │ ├─ training_statistics_write_json.py # Generates game environment and trains agents using Q-Learning
 │ ├─ pygame_read_json.py               # Visualizes the game states stored as JSON files
-├─ requirements 
-│ ├─ requirements.txt                  # Requirements
 ├─ sprites/                            # Directory for graphical assets (Pac-Man, Ghosts, Rewards, etc.)
 ├─ game_states/                        # Directory for saved game state JSON files
 └─ README.md                           # Project documentation

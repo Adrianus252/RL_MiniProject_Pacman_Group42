@@ -1,6 +1,0 @@
---pip install pandas
---pip install networkx
----
-pip install ipython
-pip install plotly
-pip install pygame
