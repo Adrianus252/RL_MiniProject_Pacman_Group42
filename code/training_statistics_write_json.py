@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import json
 import os
 from copy import deepcopy
+import seaborn as sns
 
 # Define environment parameters
 GRID_SIZE = 8
@@ -166,6 +167,28 @@ def plot_pacman_win_conditions(pacman_win_conditions):
     plt.tight_layout()
     plt.show()
 
+def plot_annotated_heatmap(visit_counts, title, BIG_highlight_position, MEDIUM_highlight_position, SMALL_highlight_position, cmap="Blues"):
+    """Plots a heatmap and annotates a specific field."""
+    plt.figure(figsize=(8, 6))
+    ax = sns.heatmap(visit_counts, cmap=cmap, annot=True, cbar=True, square=True, annot_kws={"size": 5})
+
+
+    # Annotate the highlighted cell
+    ax.text(BIG_highlight_position[1] + 0.5, BIG_highlight_position[0] + 0.5, 'L', 
+            ha='center', va='center', color="red", fontsize=16)
+    
+    for x in MEDIUM_highlight_position:
+      ax.text(x[1] + 0.5, x[0] + 0.5, 'M', 
+            ha='center', va='center', color="red", fontsize=16)
+    for x in SMALL_highlight_position:
+      ax.text(x[1] + 0.5, x[0] + 0.5, 'S', 
+            ha='center', va='center', color="red", fontsize=16)
+
+    plt.title(title)
+    plt.xlabel("X (Grid Column)")
+    plt.ylabel("Y (Grid Row)")
+    plt.show()
+
 # Initialize environment
 original_env, original_big_reward, original_medium_rewards, original_small_rewards, original_ghosts, original_walls = create_environment()
 
@@ -181,6 +204,10 @@ pacman_wins = 0
 ghost_wins = 0
 total_small_rewards_collected = []
 total_medium_rewards_collected = []
+
+# Initialize Variables for Headmaps
+pacman_visit_counts = np.zeros((GRID_SIZE, GRID_SIZE))
+ghost_visit_counts = np.zeros((GRID_SIZE, GRID_SIZE))
 
 pacman_win_conditions = {"big_reward": 0, "all_medium_rewards": 0, "all_small_rewards": 0}
 
@@ -353,9 +380,14 @@ for episode in range(EPISODES_COUNT):
         print(f"  Ghost Cumulative Reward: {ghost_cumulative_reward}")
         print(f"  Walls: {walls}")
 
-
     # Save game states to a file
     save_game_state(f"game_states/game_states_episode_{episode + 1}.json", game_states)
+
+    # Save pos for Headmaps
+    pacman_visit_counts[position[0], position[1]] += 1
+
+    for ghost in ghosts:
+        ghost_visit_counts[ghost[0], ghost[1]] += 1
 
     # Calculate rewards collected
     small_rewards_collected = initial_small_rewards - len(small_rewards)
@@ -403,3 +435,7 @@ print(f"Ghost Wins: {ghost_wins}")
 plot_training_performance(pacman_rewards_per_episode, ghost_rewards_per_episode)
 plot_win_statistics(pacman_wins, ghost_wins)
 plot_pacman_win_conditions(pacman_win_conditions)
+
+# plot Headmaps
+plot_annotated_heatmap(pacman_visit_counts, "Pac-Man State Visit Heatmap", original_big_reward, original_medium_rewards, original_small_rewards)
+plot_annotated_heatmap(ghost_visit_counts, "Ghosts State Visit Heatmap", original_big_reward, original_medium_rewards, original_small_rewards, cmap="Reds",)
