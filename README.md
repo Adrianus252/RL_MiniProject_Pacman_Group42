@@ -10,8 +10,10 @@ This project simulates a Pac-Man game using Q-Learning and visualizes the result
 
 ---
 ## Example Video 
-- Visualization in pygame of the game data from the training 
+- Visualization in pygame of the game data from the training
+
 https://github.com/user-attachments/assets/2766fd0b-511a-4f7e-b091-2745b3d3d224
+
 ---
 
 ## Requirements
