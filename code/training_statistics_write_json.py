@@ -33,7 +33,7 @@ EPSILON = 1.0  # Exploration rate
 EPSILON_DECAY = 0.995  # Exploration decay
 MIN_EPSILON = 0.01
 
-EPISODES_COUNT = 20
+EPISODES_COUNT = 1000
 
 
 RANDOM_PACMAN_START = False  # Set to True for random position every episode, False for a fixed start

@@ -7,7 +7,7 @@ import time
 CELL_SIZE = 50
 GRID_SIZE = 8  # Set the grid size here
 BACKGROUND_COLOR = (0, 0, 0)  # Black
-SPEED = 0.1  # Adjust this value to control the speed (e.g., 0.2 seconds between frames)
+SPEED = 0.3  # Adjust this value to control the speed (e.g., 0.2 seconds between frames)
 
 # File paths for the sprites
 SPRITE_PATHS = {
@@ -128,6 +128,16 @@ def visualize_game_states(game_states, grid_size, sprite_paths):
     total_episodes = len(game_states)
     for episode_num, episode_states in enumerate(game_states, start=1):
         winner = None  # Track the winner
+
+        # For Debugging and Showing specific episodes
+        # if episode_num < 6: #1-5
+        #     pass
+        # elif episode_num >= 6 and episode_num < 500: #6 -499 Skip
+        #     continue
+        # elif episode_num >= 506 and episode_num < 995: #506 - 994 Skip
+        #     continue
+        # 1-5, 500-505, 995-1000
+        
 
         print(f"\nEpisode {episode_num}:")
         for i, state in enumerate(episode_states):
