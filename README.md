@@ -80,7 +80,7 @@ The game environment is represented as an 8x8 grid where:
 
 ### Key Parameters:
 - Grid Size: 8x8 grid
-- Rewards: Small rewards (value 5), medium rewards (value 10), and a big reward (value 100).
+- Rewards: Small rewards -> Raspberry (value 5), medium rewards -> Apples (value 10), and a big reward -> Banana (value 100).
 - Ghosts: Ghosts move through the grid and try to catch Pac-Man.
 - Walls: Random walls are placed on the grid to obstruct movement.
 
@@ -88,7 +88,11 @@ The game environment is represented as an 8x8 grid where:
 - Pac-Man can move up, down, left, or right on the grid.
 - Pac-Man can collect rewards and must avoid the ghosts.
 - Ghosts move in random directions, and if they catch Pac-Man, they win the round.
-- Game End: The game ends when Pac-Man collects all rewards, is caught by a ghost, or achieves the big reward goal.
+- Game End: The game ends when 
+  - Pac-Man collects the big reward (banana) -> Pacman wins
+  - Pac-Man collects all medium rewards (apples) -> Pacman wins
+  - Pac-Man collects all small rewards (raspberries) -> Pacman wins
+  - Pacman is caught by a ghost -> Ghost wins
 
 ### Actions:
 - 0: Up
