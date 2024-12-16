@@ -2,6 +2,7 @@ import pygame
 import json
 import os
 import time
+from djikstra import move_ghosts_towards_pacman
 
 # Define Pygame parameters
 CELL_SIZE = 50
@@ -147,6 +148,9 @@ def visualize_game_states(game_states, grid_size, sprite_paths):
             big_reward_pos = state["big_reward"]
             small_reward_positions = state["small_rewards"]
             medium_reward_positions = state["medium_rewards"]
+
+            # move ghosts using djikstra
+            move_ghosts_towards_pacman(state, grid_size)
 
             # Check if it's the last step of the last episode
             is_last_episode = episode_num == total_episodes
