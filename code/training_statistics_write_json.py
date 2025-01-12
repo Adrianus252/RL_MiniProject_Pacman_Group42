@@ -5,8 +5,10 @@ import json
 import os
 from copy import deepcopy
 import seaborn as sns
+from collections import deque
+import heapq
 
-# Define environment parameters
+# Define environment parameters					 
 GRID_SIZE = 8
 NUM_SMALL_REWARDS = 3
 NUM_MEDIUM_REWARDS = 2
@@ -35,11 +37,95 @@ MIN_EPSILON = 0.01
 
 EPISODES_COUNT = 1000
 
-
 RANDOM_PACMAN_START = False  # Set to True for random position every episode, False for a fixed start
-
 # Initialize Pac-Man's fixed start position if RANDOM_PACMAN_START is False
 fixed_start_position = None
+
+#USE_DIJKSTRA = False  # Ghost uses only Q-Learning
+USE_DIJKSTRA = True   # Ghost tries to move via Dijkstra 
+
+def dijkstra_next_action(current_ghost_pos, pacman_pos, walls):
+    """
+    Returns the best action for the Ghost to move toward Pac-Man 
+    using Dijkstra's shortest path. If no path is found, returns None.
+
+    current_ghost_pos: (x, y)
+    pacman_pos: (x, y)
+    walls: list or set of wall coordinates
+    """
+    # Quick check: if we’re already at Pac-Man’s position, no move needed
+    if current_ghost_pos == pacman_pos:
+        return None
+
+    # Dijkstra or BFS typically uses a priority queue if we consider costs, 
+    # but since this is a grid with uniform costs, BFS can suffice. 
+    # We'll use a min-heap to keep it a bit more generalizable.
+
+    # Offsets for actions: [Up, Down, Left, Right]
+    directions = {
+        0: (-1, 0),  # Up
+        1: (1, 0),   # Down
+        2: (0, -1),  # Left
+        3: (0, 1),   # Right
+    }
+
+    # Set up a priority queue: (distance, (x, y), path_taken)
+    # distance can be the number of steps from ghost to node
+    # path_taken will be the list of actions used to reach that node
+    pq = []
+    heapq.heappush(pq, (0, current_ghost_pos, []))
+
+    visited = set([current_ghost_pos])
+
+    while pq:
+        dist, (cx, cy), path = heapq.heappop(pq)
+
+        # If we've reached Pac-Man's position, return the FIRST action
+        if (cx, cy) == pacman_pos:
+            # path is a list of actions that got us from Ghost to Pac-Man
+            # The first action is what the Ghost should do now
+            if path:
+                return path[0]
+            else:
+                return None
+
+        # Explore neighbors
+        for action_idx, (dx, dy) in directions.items():
+            nx, ny = cx + dx, cy + dy
+            # Check boundaries and walls
+            if 0 <= nx < GRID_SIZE and 0 <= ny < GRID_SIZE and (nx, ny) not in walls:
+                if (nx, ny) not in visited:
+                    visited.add((nx, ny))
+                    # push new state with dist+1
+                    new_path = path + [action_idx]
+                    heapq.heappush(pq, (dist + 1, (nx, ny), new_path))
+
+    # If we exhaust the queue and find no path, return None
+    return None
+
+def plot_dijkstra_usage(dijkstra_usage):
+    episodes = np.arange(1, len(dijkstra_usage) + 1)  # x-values for episodes
+    usage_array = np.array(dijkstra_usage)            # convert list to NumPy array
+
+    plt.figure(figsize=(10, 5))
+
+    # Each bar starts at y=0 and extends usage_array[i] units upward
+    plt.bar(episodes, usage_array, bottom=0, color='green', label="Dijkstra Usage")
+
+    plt.title("Percentage of Dijkstra-Based Actions per Episode")
+    plt.xlabel("Episode")
+    plt.ylabel("Dijkstra Usage (%)")
+
+    # If usage can reach up to 100%, set the y-limit accordingly
+    plt.ylim(0, 100)  
+
+    plt.grid(True, axis='y')
+    plt.legend()
+    plt.show()
+
+
+
+
 
 
 # Helper functions
@@ -91,9 +177,11 @@ def create_environment():
           f"  Medium Rewards: {medium_rewards}\n  Small Rewards: {small_rewards}\n  Ghosts: {ghosts}")
     return env, big_reward, medium_rewards, small_rewards, ghosts, walls
 
+
 def is_valid_position(pos, walls):
     x, y = pos
     return 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and pos not in walls
+
 
 def get_next_position(pos, action, walls):
     x, y = pos
@@ -105,7 +193,9 @@ def get_next_position(pos, action, walls):
         next_pos = (x, y - 1)
     elif action == 3:  # Right
         next_pos = (x, y + 1)
+													  
     return next_pos if is_valid_position(next_pos, walls) else pos
+
 
 def get_pacman_reward(position, big_reward, medium_rewards, small_rewards, ghosts):
     """Get Pac-Man's reward for the current position."""
@@ -120,6 +210,7 @@ def get_pacman_reward(position, big_reward, medium_rewards, small_rewards, ghost
     elif position in ghosts:
         return PACMAN_GHOST_PENALTY
     return PACMAN_MOVE_PENALTY
+
 
 def plot_training_performance(pacman_rewards, ghost_rewards):
     """Plot cumulative rewards for Pac-Man and Ghosts side by side."""
@@ -144,6 +235,7 @@ def plot_training_performance(pacman_rewards, ghost_rewards):
     plt.tight_layout()
     plt.show()
 
+
 def plot_win_statistics(pacman_wins, ghost_wins):
     """Plot win statistics for Pac-Man and Ghosts."""
     labels = ["Pac-Man Wins", "Ghost Wins"]
@@ -162,6 +254,8 @@ def save_game_state(filename, state):
     """Save the game state to a JSON file."""
     with open(filename, "w") as file:
         json.dump(state, file, indent=4)
+
+
 def plot_pacman_win_conditions(pacman_win_conditions):
     labels = list(pacman_win_conditions.keys())
     counts = list(pacman_win_conditions.values())
@@ -174,7 +268,8 @@ def plot_pacman_win_conditions(pacman_win_conditions):
     plt.tight_layout()
     plt.show()
 
-def plot_annotated_heatmap(visit_counts, title, BIG_highlight_position, MEDIUM_highlight_position, SMALL_highlight_position, cmap="Blues"):
+
+def plot_annotated_heatmap(visit_counts, title, BIG_highlight_position, MEDIUM_highlight_position, SMALL_highlight_position, cmap="Blues"):								 
     """Plots a heatmap and annotates a specific field."""
     plt.figure(figsize=(8, 6))
     ax = sns.heatmap(visit_counts, cmap=cmap, annot=True, cbar=True, square=True, annot_kws={"size": 5})
@@ -196,7 +291,8 @@ def plot_annotated_heatmap(visit_counts, title, BIG_highlight_position, MEDIUM_h
     plt.ylabel("Y (Grid Row)")
     plt.show()
 
-# Initialize environment
+
+# Initialize environment						 
 original_env, original_big_reward, original_medium_rewards, original_small_rewards, original_ghosts, original_walls = create_environment()
 
 # Initialize Q-tables
@@ -218,6 +314,10 @@ ghost_visit_counts = np.zeros((GRID_SIZE, GRID_SIZE))
 
 pacman_win_conditions = {"big_reward": 0, "all_medium_rewards": 0, "all_small_rewards": 0}
 
+
+
+dijkstra_usage_per_episode = []
+# Iterate over episodes
 for episode in range(EPISODES_COUNT):
     # Reset environment for each episode
     env = original_env.copy()
@@ -234,6 +334,7 @@ for episode in range(EPISODES_COUNT):
     # Generate Pac-Man's position
     if RANDOM_PACMAN_START:
         position = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
+																	 
         while (
             position in walls or 
             position == big_reward or 
@@ -243,6 +344,7 @@ for episode in range(EPISODES_COUNT):
         ):
             position = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
     else:
+												
         if episode == 0 or fixed_start_position is None:
             fixed_start_position = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
             while (
@@ -301,6 +403,9 @@ for episode in range(EPISODES_COUNT):
     # print(f"  Big Reward Position: {big_reward}")
 
 
+    # step loop for each episode
+    dijkstra_count = 0
+    qlearning_count = 0
     while not done:
         step += 1
 
@@ -315,22 +420,52 @@ for episode in range(EPISODES_COUNT):
             x, y = position
             pacman_action = np.argmax(pacman_Q_table[x, y])  # Exploit
 
-        # Ghosts choose their actions
+        # Ghosts choose their actions			  
         ghost_actions = []
         for ghost in ghosts:
-            if random.uniform(0, 1) < EPSILON:
-                ghost_action = random.choice(ACTIONS)  # Explore
+            # Decide if we use Q-Learning or random (EPSILON)
+            use_qlearning = (random.uniform(0, 1) < EPSILON)
+
+            if USE_DIJKSTRA and not use_qlearning:
+                # Attempt to compute the Dijkstra action
+                dijkstra_action = dijkstra_next_action(ghost, position, set(walls))
+                if dijkstra_action is not None:
+                    ghost_action = dijkstra_action
+                    dijkstra_count += 1  # <--- increment Dijkstra usage
+                else:
+                    # If no path found, fallback to Q-Learning exploitation
+                    x, y = ghost
+                    ghost_action = np.argmax(ghosts_Q_table[x, y])
+                    qlearning_count += 1  # <--- increment Q-learning usage
             else:
-                x, y = ghost
-                ghost_action = np.argmax(ghosts_Q_table[x, y])  # Exploit
+                # Normal Q-Learning (either exploring or exploiting)
+                if random.uniform(0, 1) < EPSILON:			  
+                    ghost_action = random.choice(ACTIONS)  # Explore
+                    qlearning_count += 1
+                else:				
+                    x, y = ghost
+                    ghost_action = np.argmax(ghosts_Q_table[x, y])  # Exploit
+                    qlearning_count += 1
+
             ghost_actions.append(ghost_action)
+
+
 
         # Update Pac-Man's position
         next_position = get_next_position(position, pacman_action, walls)
         pacman_reward = get_pacman_reward(next_position, big_reward, medium_rewards, small_rewards, ghosts)
         pacman_cumulative_reward += pacman_reward
+        # Update Pac-Man's Q-table						  
+        x, y = position
+        nx, ny = next_position
+        pacman_Q_table[x, y, pacman_action] += ALPHA * (
+            pacman_reward + GAMMA * np.max(pacman_Q_table[nx, ny]) - pacman_Q_table[x, y, pacman_action]
+        )
+        # Update pac mans position
+        position = next_position
 
-        # Update ghosts' positions
+
+        # Update ghosts' positions			  
         new_ghosts = []
         ghost_reward_given = False  # Track if reward has been given for catching Pac-Man
 
@@ -338,6 +473,7 @@ for episode in range(EPISODES_COUNT):
             new_ghost_pos = get_next_position(ghost, ghost_action, walls)
 
             if not ghost_reward_given and new_ghost_pos == position:  # Ghost catches Pac-Man
+									   
                 ghost_reward = GHOST_CATCH_REWARD  # Assign the capture reward
                 ghost_cumulative_reward += ghost_reward
                 ghost_reward_given = True  # Ensure the reward is given only once
@@ -357,15 +493,17 @@ for episode in range(EPISODES_COUNT):
 
         ghosts = new_ghosts
 
-        # Update Pac-Man's Q-table
-        x, y = position
-        nx, ny = next_position
-        pacman_Q_table[x, y, pacman_action] += ALPHA * (
-            pacman_reward + GAMMA * np.max(pacman_Q_table[nx, ny]) - pacman_Q_table[x, y, pacman_action]
-        )
+						  
+        # # Update Pac-Man's Q-table
+						  
+        # x, y = position
+        # nx, ny = next_position
+        # pacman_Q_table[x, y, pacman_action] += ALPHA * (
+        #     pacman_reward + GAMMA * np.max(pacman_Q_table[nx, ny]) - pacman_Q_table[x, y, pacman_action]
+        # )
 
-        # Update position
-        position = next_position
+        # # Update position
+        # position = next_position
 
         
         # Check if the game is done
@@ -423,6 +561,17 @@ for episode in range(EPISODES_COUNT):
             "ghost_cumulative_reward": ghost_cumulative_reward,
         }
         game_states.append(current_state)
+
+
+    # Avoid division by zero if the Ghost never moved:
+    total_ghost_actions = dijkstra_count + qlearning_count
+    if total_ghost_actions > 0:
+        dijkstra_percentage = (dijkstra_count / total_ghost_actions) * 100.0
+    else:
+        dijkstra_percentage = 0.0
+
+    dijkstra_usage_per_episode.append(dijkstra_percentage)
+
 
 
     # new 
@@ -489,6 +638,21 @@ print(f"  - Wins by collecting all medium rewards: {pacman_win_conditions['all_m
 print(f"  - Wins by collecting all small rewards: {pacman_win_conditions['all_small_rewards']}")
 print(f"Ghost Wins: {ghost_wins}")
 
+# ------------------------------------------------------------
+# PRINT OUT THE FULL ARRAYS + MIN & MAX FOR PACMAN AND GHOST
+# ------------------------------------------------------------
+print("\nPac-Man Rewards Per Episode:")
+print(pacman_rewards_per_episode)
+print(f"\nPac-Man Rewards Stats:")
+print(f"  Min: {np.min(pacman_rewards_per_episode)}")
+print(f"  Max: {np.max(pacman_rewards_per_episode)}")
+
+print("\nGhost Rewards Per Episode:")
+print(ghost_rewards_per_episode)
+print(f"\nGhost Rewards Stats:")
+print(f"  Min: {np.min(ghost_rewards_per_episode)}")
+print(f"  Max: {np.max(ghost_rewards_per_episode)}\n")
+
 
 # Display training results
 plot_training_performance(pacman_rewards_per_episode, ghost_rewards_per_episode)
@@ -498,3 +662,7 @@ plot_pacman_win_conditions(pacman_win_conditions)
 # plot Headmaps
 plot_annotated_heatmap(pacman_visit_counts, "Pac-Man State Visit Heatmap", original_big_reward, original_medium_rewards, original_small_rewards)
 plot_annotated_heatmap(ghost_visit_counts, "Ghosts State Visit Heatmap", original_big_reward, original_medium_rewards, original_small_rewards, cmap="Reds",)
+								  						
+# Then call it at the end of your script:
+if USE_DIJKSTRA:
+    plot_dijkstra_usage(dijkstra_usage_per_episode)
